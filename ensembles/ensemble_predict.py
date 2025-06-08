@@ -66,13 +66,13 @@ class TestSensorDataset(Dataset):
     Given a list of (50×3) numpy windows, returns normalized torch tensors.
     """
     def __init__(self, data_list):
-        self.data_list = data_list  
+        self.data_list = data_list  # list of np arrays shape (50,3)
 
     def __len__(self):
         return len(self.data_list)
 
     def __getitem__(self, idx):
-        x = torch.tensor(self.data_list[idx], dtype=torch.float32)  
+        x = torch.tensor(self.data_list[idx], dtype=torch.float32)  # (50,3)
         # normalize per window
         mean = x.mean(dim=0, keepdim=True)
         std = x.std(dim=0, keepdim=True).clamp(min=1e-6)
@@ -99,7 +99,7 @@ def ensemble_predict(
     3. Average the two probability vectors (0.5 * classical + 0.5 * patchtst).
     4. argmax → final label. Write CSV {id, target_feature}.
     """
-    # Load test DataFrame
+    # 1) Load test DataFrame
     try:
         df = pd.read_csv(test_csv)
     except Exception as e:
@@ -114,7 +114,7 @@ def ensemble_predict(
     ids = df['id'].tolist()
     sensors = df['sensor_location'].tolist()
 
-    # Load classical LightGBM models
+    # 2) Load classical LightGBM models
     sensors_list = ['right_arm', 'right_leg', 'left_leg', 'left_arm']
     classical_boosters = {}
     for sensor in sensors_list:
@@ -125,7 +125,7 @@ def ensemble_predict(
         with open(model_path, "rb") as f:
             classical_boosters[sensor] = pickle.load(f)
 
-    # Load PatchTST models (per sensor)
+    # 3) Load PatchTST models (per sensor)
     patchtst_models = {}
     for sensor in sensors_list:
         cp_path = os.path.join(patchtst_models_dir, f"patchtst_{sensor}.pth")
@@ -154,7 +154,7 @@ def ensemble_predict(
         model.eval()
         patchtst_models[sensor] = model
 
-    # Group windows by sensor for batch inference
+    # 4) Group windows by sensor for batch inference
     sensor_data = {sensor: [] for sensor in sensors_list}
     idx_map = {sensor: [] for sensor in sensors_list}
     for idx, row in df.iterrows():
@@ -187,7 +187,7 @@ def ensemble_predict(
     num_rows = len(df)
     all_probs = np.zeros((num_rows, 19), dtype=np.float32)
 
-    # For each sensor, predict classical + patchtst, then average
+    # 5) For each sensor, predict classical + patchtst, then average
     for sensor in sensors_list:
         indices = idx_map[sensor]
         windows = sensor_data[sensor]
@@ -196,7 +196,7 @@ def ensemble_predict(
             print(f"No test windows for sensor {sensor}; skipping")
             continue
 
-        # Classical: compute static features for each window
+        # 5a) Classical: compute static features for each window
         features = []
         for W in windows:
             # Basic stats
@@ -218,7 +218,7 @@ def ensemble_predict(
             print(f"Error predicting classical for {sensor}: {e}")
             class_prob = np.zeros((n, 19), dtype=np.float32)
 
-        # PatchTST: build DataLoader for windows
+        # 5b) PatchTST: build DataLoader for windows
         dataset = TestSensorDataset(windows)
         loader  = DataLoader(dataset, batch_size=64, shuffle=False, num_workers=0)
         model   = patchtst_models[sensor]
@@ -230,12 +230,12 @@ def ensemble_predict(
                 patch_probs_list.append(prob)
         patch_probs = np.concatenate(patch_probs_list, axis=0)  # (n,19)
 
-        # Average classical & patchtst probabilities
+        # 5c) Average classical & patchtst probabilities
         combined = 0.5 * class_prob + 0.5 * patch_probs
         for i, idx in enumerate(indices):
             all_probs[idx] = combined[i]
 
-    # Final labels = argmax
+    # 6) Final labels = argmax
     final_labels = np.argmax(all_probs, axis=1).astype(int)
     submission = pd.DataFrame({'id': ids, 'target_feature': final_labels})
     submission.to_csv(output_csv, index=False)
