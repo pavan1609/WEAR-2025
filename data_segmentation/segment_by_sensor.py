@@ -6,7 +6,6 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-# Define the 4 sensors and their 3 accelerometer columns each
 SENSORS = {
     'right_arm': ['right_arm_acc_x', 'right_arm_acc_y', 'right_arm_acc_z'],
     'right_leg': ['right_leg_acc_x', 'right_leg_acc_y', 'right_leg_acc_z'],
@@ -15,12 +14,6 @@ SENSORS = {
 }
 
 def sliding_window_segment_sensor(df, sensor_cols, window_size=50, stride=25, label_col='activity'):
-    """
-    Segments a DataFrame for a single sensor (3‐axis).
-    Returns:
-      X: np.ndarray of shape (num_windows, window_size, 3)
-      y: np.ndarray of shape (num_windows,)
-    """
     data = df[sensor_cols].values      # shape (N, 3)
     labels = df[label_col].fillna(0).astype(int).values
 
@@ -38,20 +31,12 @@ def sliding_window_segment_sensor(df, sensor_cols, window_size=50, stride=25, la
     return np.array(X), np.array(y)
 
 def save_sensor_segments(X, y, output_dir, sensor, prefix):
-    """
-    Saves X and y for one subject & one sensor:
-    {sensor}_{subject}_X.npy and {sensor}_{subject}_y.npy
-    """
     os.makedirs(output_dir, exist_ok=True)
     np.save(os.path.join(output_dir, f"{sensor}_{prefix}_X.npy"), X)
     np.save(os.path.join(output_dir, f"{sensor}_{prefix}_y.npy"), y)
     logger.info(f"Saved {sensor} segments: {sensor}_{prefix}_X.npy, {sensor}_{prefix}_y.npy")
 
 def segment_all_subjects_by_sensor(data_dir, window_size=50, stride=25, output_root='raw_segments_by_sensor/'):
-    """
-    For every sbj_<id>.csv in data_dir, run sliding_window_segment_sensor
-    on each of the 4 sensors and write separate .npy pairs under output_root/<sensor>/.
-    """
     logger.info(f"Starting per-sensor segmentation from {data_dir} → {output_root}")
     for fn in sorted(os.listdir(data_dir)):
         if fn.startswith('sbj_') and fn.endswith('.csv'):
@@ -62,7 +47,6 @@ def segment_all_subjects_by_sensor(data_dir, window_size=50, stride=25, output_r
                 continue
 
             for sensor, cols in SENSORS.items():
-                # Ensure the DataFrame has those 3 columns
                 for c in cols:
                     if c not in df.columns:
                         logger.error(f"Missing column {c} in {fn}")
