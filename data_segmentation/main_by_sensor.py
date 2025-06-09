@@ -7,10 +7,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 def split_by_subject_acc(processed_csv, out_dir):
-    """
-    Splits processed_data_acc.csv (with sbj_id, 12 accel cols, activity)
-    by sbj_id into CSVs: out_dir/sbj_<id>.csv
-    """
     logger.info(f"Splitting {processed_csv} by subject into {out_dir}")
     df = pd.read_csv(processed_csv)
     os.makedirs(out_dir, exist_ok=True)
