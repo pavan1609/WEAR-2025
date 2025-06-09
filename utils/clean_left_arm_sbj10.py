@@ -2,11 +2,6 @@ import os
 import numpy as np
 
 def clean_one_subject(sensor_dir, subject_prefix):
-    """
-    Loads `<sensor>/<prefix>_X.npy` and `<sensor>/<prefix>_y.npy`,
-    removes any window rows where X has NaN or Inf, and
-    overwrites the files with the cleaned arrays.
-    """
     x_path = os.path.join(sensor_dir, f"{subject_prefix}_X.npy")
     y_path = os.path.join(sensor_dir, f"{subject_prefix}_y.npy")
 
@@ -14,7 +9,6 @@ def clean_one_subject(sensor_dir, subject_prefix):
     X = np.load(x_path)  # shape (N, 50, 3)
     y = np.load(y_path)  # shape (N,)
 
-    # Find windows that are finite and have nonzero variance
     mask_finite = np.all(np.isfinite(X), axis=(1, 2))
     var_per_window = np.var(X, axis=(1, 2))
     mask_var = var_per_window > 0
@@ -31,7 +25,6 @@ def clean_one_subject(sensor_dir, subject_prefix):
     X_clean = X[good_mask]
     y_clean = y[good_mask]
 
-    # Overwrite the files
     np.save(x_path, X_clean)
     np.save(y_path, y_clean)
     print(f"  Overwrote {x_path} and {y_path} with cleaned arrays.")
