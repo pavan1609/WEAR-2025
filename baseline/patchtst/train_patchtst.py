@@ -1,5 +1,3 @@
-# File: baseline/patchtst/train_patchtst.py
-
 import os
 import glob
 import argparse
@@ -11,8 +9,6 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.metrics import f1_score
 from tqdm import tqdm
-
-# Import the PatchTSTModel from the same directory
 from baseline.patchtst.patchtst_model import PatchTSTModel
 
 
@@ -25,7 +21,6 @@ def set_seed(seed=42):
 
 class SensorWindowDataset(Dataset):
     def __init__(self, X, y):
-        # X: numpy array of shape (N, 50, 3), y: numpy array of shape (N,)
         self.X = X.astype(np.float32)
         self.y = y.astype(np.int64)
 
@@ -33,8 +28,7 @@ class SensorWindowDataset(Dataset):
         return len(self.y)
 
     def __getitem__(self, idx):
-        x = torch.from_numpy(self.X[idx])  # shape: (50, 3)
-        # Normalize per window
+        x = torch.from_numpy(self.X[idx])
         mean = x.mean(dim=0, keepdim=True)
         std = x.std(dim=0, keepdim=True).clamp(min=1e-6)
         x = (x - mean) / std
@@ -43,11 +37,6 @@ class SensorWindowDataset(Dataset):
 
 
 def load_sensor_data(sensor_dir):
-    """
-    Loads all *_X.npy and *_y.npy pairs under sensor_dir,
-    but discards any window that is NaN/Inf or zero‐variance.
-    Returns X_all (N,50,3) and y_all (N,).
-    """
     X_list, y_list = [], []
     for x_path in sorted(glob.glob(os.path.join(sensor_dir, "*_X.npy"))):
         prefix = x_path[:-6]
@@ -57,7 +46,6 @@ def load_sensor_data(sensor_dir):
         X = np.load(x_path)
         y = np.load(y_path)
 
-        # Filter: finite values and nonzero variance
         mask_finite = np.all(np.isfinite(X), axis=(1, 2))
         var_per_window = np.var(X, axis=(1, 2))
         mask_var = var_per_window > 0
@@ -91,9 +79,6 @@ def train_sensor_patchtst(
     lr,
     device
 ):
-    """
-    Train a PatchTSTModel on all data for a given sensor and save the checkpoint.
-    """
     sensor_dir = os.path.join(segments_root, sensor)
     X_all, y_all = load_sensor_data(sensor_dir)
     print(f"Loaded {sensor}: X={X_all.shape}, y={y_all.shape}")
