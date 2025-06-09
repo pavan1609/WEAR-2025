@@ -2,9 +2,6 @@ import os
 import numpy as np
 
 def check_sensor_folder(sensor_dir):
-    """
-    Iterate through every *_X.npy in sensor_dir and flag any NaN/Inf in the data.
-    """
     bad_files = []
     for fn in sorted(os.listdir(sensor_dir)):
         if not fn.endswith("_X.npy"):
