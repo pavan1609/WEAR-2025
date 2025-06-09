@@ -8,17 +8,16 @@ def extract_features_for_sensor(segments_dir, feature_csv):
     for fn in sorted(os.listdir(segments_dir)):
         if not fn.endswith("_X.npy"):
             continue
-        prefix = fn[:-6]  # e.g. "right_arm_sbj_0"
+        prefix = fn[:-6] 
         X = np.load(os.path.join(segments_dir, fn))
         y = np.load(os.path.join(segments_dir, prefix + "_y.npy"))
 
-        # Basic features (mean/std/min/max per axis)
+        # mean/std/min/max per axis
         mean = X.mean(axis=1)
         std = X.std(axis=1)
         mn = X.min(axis=1)
         mx = X.max(axis=1)
 
-        # Optional magnitude (highly recommended)
         mag = np.linalg.norm(X, axis=2)
         mag_mean = mag.mean(axis=1).reshape(-1,1)
         mag_std = mag.std(axis=1).reshape(-1,1)
@@ -32,7 +31,6 @@ def extract_features_for_sensor(segments_dir, feature_csv):
     X_all = np.concatenate(all_feats, axis=0)
     y_all = np.concatenate(all_labels, axis=0).ravel()
 
-    # Column names
     col_names = []
     for stat in ["mean", "std", "min", "max"]:
         for c in range(3):
