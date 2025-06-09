@@ -24,11 +24,9 @@ def main():
     print(f"Loading {args.input_csv}...")
     df = pd.read_csv(args.input_csv)
 
-    # Collect all columns ending in '_acc_x', '_acc_y', or '_acc_z'
     accel_cols = [c for c in df.columns if c.endswith(("_acc_x", "_acc_y", "_acc_z"))]
     print(f"Detected accelerometer columns: {accel_cols}")
 
-    # Also keep 'timestamp', 'sbj_id', and 'activity' if they exist
     keep = []
     for col in ['timestamp', 'sbj_id', 'activity']:
         if col in df.columns:
