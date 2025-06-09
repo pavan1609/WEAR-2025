@@ -31,19 +31,6 @@ label_dict = {
 }
 
 def load_all_subjects(data_dir, sampling_rate=50, save_processed=False, save_path='processed_data.csv'):
-    """
-    Loads all sbj_*.csv files from a directory, replaces labels with numeric codes,
-    adds synthetic timestamps, and concatenates into a single DataFrame.
-
-    Args:
-        data_dir (str): Path to directory containing sbj_*.csv files.
-        sampling_rate (int): Sampling rate in Hz to compute timestamps.
-        save_processed (bool): Whether to save the concatenated DataFrame to CSV.
-        save_path (str): Path to save the processed CSV if save_processed=True.
-
-    Returns:
-        pd.DataFrame: The concatenated DataFrame of all subjects.
-    """
     all_data = []
     time_interval = 1.0 / sampling_rate
 
